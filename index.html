@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dygital</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            glass: 'rgba(255, 255, 255, 0.02)',
+            'glass-border': 'rgba(255, 255, 255, 0.12)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --accent: #268bd2;
+      --bg-start: #002b36;
+      --bg-end: #073642;
+      --glow: rgba(38, 139, 210, 0.3);
+      --grad-start: #268bd2;
+      --grad-end: #2aa198;
+    }
+
+    body[data-theme="solarized"] { 
+      --accent: #268bd2; --bg-start: #001b22; --bg-end: #073642; --glow: rgba(38, 139, 210, 0.3);
+      --grad-start: #268bd2; --grad-end: #2aa198;
+    }
+    body[data-theme="emerald"] { 
+      --accent: #2aa198; --bg-start: #02201a; --bg-end: #064e3b; --glow: rgba(42, 161, 152, 0.3);
+      --grad-start: #2aa198; --grad-end: #859900;
+    }
+    body[data-theme="purple"] { 
+      --accent: #a855f7; --bg-start: #0f071b; --bg-end: #1e0b36; --glow: rgba(168, 85, 247, 0.25);
+      --grad-start: #a855f7; --grad-end: #6366f1;
+    }
+
+    body {
+      background: radial-gradient(circle at top right, var(--bg-end), var(--bg-start));
+      min-height: 100vh;
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .ambient-bg {
+      position: fixed;
+      width: 150vw;
+      height: 150vh;
+      background: radial-gradient(circle at center, var(--glow) 0%, transparent 70%);
+      z-index: -1;
+      filter: blur(100px);
+      animation: pulseBg 12s infinite alternate;
+    }
+
+    @keyframes pulseBg {
+      0% { transform: translate(-15%, -15%) scale(1); }
+      100% { transform: translate(10%, 10%) scale(1.15); }
+    }
+
+    .glass-main {
+      background: rgba(255, 255, 255, 0.035);
+      backdrop-filter: blur(40px) saturate(200%);
+      -webkit-backdrop-filter: blur(40px) saturate(200%);
+      border: 1px solid var(--glass-border);
+      border-radius: 60px;
+      box-shadow: 0 40px 120px -20px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .audio-panel {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 40px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Kick Visualizer Style */
+    #kick-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0%;
+      background: linear-gradient(to right, var(--accent), transparent);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 1;
+      transition: width 0.05s ease-out;
+    }
+
+    .tab-panel {
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .tab-panel.active { 
+      display: block; 
+      opacity: 1; 
+      transform: translateY(0);
+    }
+
+    .nav-btn {
+      position: relative;
+      transition: all 0.3s ease;
+      color: rgba(255, 255, 255, 0.3);
+    }
+    .nav-btn.active {
+      color: white;
+      transform: translateY(-2px);
+    }
+    .nav-indicator {
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 20px;
+      box-shadow: 0 0 15px var(--accent);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .nav-btn.active .nav-indicator { width: 32px; }
+
+    .link-card {
+      background: linear-gradient(110deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 32px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .link-card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.03) translateY(-6px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #lightbox {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(30px); z-index: 1000;
+      display: none; cursor: zoom-out;
+    }
+
+    .greeting-text {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      margin-bottom: 4px;
+      opacity: 0.8;
+    }
+    
+    #typing-text::after {
+  content: '|';
+  animation: blink 0.8s infinite;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+  </style>
+</head>
+<body data-theme="solarized">
+
+  <div class="ambient-bg"></div>
+
+  <div id="lightbox" class="flex items-center justify-center p-6" onclick="this.style.display='none'">
+    <img id="lb-img" src="" class="max-w-[90%] max-h-[80%] rounded-[40px] shadow-2xl transition-transform duration-500 hover:scale-105">
+  </div>
+
+  <main class="w-full max-w-md z-10">
+    <div class="glass-main p-10 md:p-12">
+      
+      <!-- Theme Bar -->
+      <div class="flex justify-between items-center mb-12">
+        <div class="flex gap-2 items-center">
+          <div class="w-2.5 h-2.5 rounded-full bg-red-500/40"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/40"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-green-500/40"></div>
+        </div>
+        <div class="flex gap-4 p-2 bg-black/30 rounded-full border border-white/5">
+          <button onclick="setTheme('solarized')" class="w-5 h-5 rounded-full bg-[#268bd2] hover:scale-125 transition shadow-lg"></button>
+          <button onclick="setTheme('emerald')" class="w-5 h-5 rounded-full bg-[#2aa198] hover:scale-125 transition shadow-lg"></button>
+          <button onclick="setTheme('purple')" class="w-5 h-5 rounded-full bg-[#d33682] hover:scale-125 transition shadow-lg"></button>
+        </div>
+      </div>
+
+      <!-- Identity -->
+      <header class="flex flex-col items-center text-center mb-12">
+        <p id="greeting" class="greeting-text animate-pulse">Sapaan...</p>
+        <div class="relative group mt-2">
+          <div class="absolute -inset-2 bg-gradient-to-r from-[var(--grad-start)] to-[var(--grad-end)] rounded-full blur-xl opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+          <div class="relative w-28 h-28 rounded-full p-1.5 bg-white/5 border border-white/10 shadow-2xl mb-6">
+            <img src="https://i.ibb.co.com/r2dyGZW3/eb223c5da71347bca6f6cb153ac0bbde.jpg" alt="Avatar" class="w-full h-full rounded-full bg-[#001b22]">
+          </div>
+        </div>
+        <h1 class="text-3xl font-[800] text-white tracking-tighter italic uppercase">DY <span class="text-[var(--accent)]">GITAL</span></h1>
+        <div class="mt-3 flex items-center gap-3">
+          <span class="w-10 h-[1px] bg-white/10"></span>
+          <p class="text-[var(--accent)] text-[10px] font-black tracking-[0.5em] uppercase opacity-70">Enthusiast berdasarkan Mood</p>
+          <span class="w-10 h-[1px] bg-white/10"></span>
+        </div>
+
+        <!-- Audio Section Final Rev -->
+        <div id="audio-container" class="w-full mt-10 audio-panel group">
+          <!-- Kick Visualizer Fill -->
+          <div id="kick-fill"></div>
+
+          <!-- Audio Upload Trigger -->
+          <label id="load-label" class="absolute top-4 right-4 z-20 w-8 h-8 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:bg-white/20 transition-all opacity-40 hover:opacity-100" title="Load Audio">
+            <input type="file" id="audio-upload" class="hidden" accept="audio/*" onchange="loadCustomAudio(this)">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </label>
+
+          <div class="relative z-10 p-6 flex items-center gap-6">
+            <div class="relative">
+              <button onclick="toggleAudio()" class="w-14 h-14 rounded-[24px] bg-white/5 border border-white/10 flex items-center justify-center text-white transition-all hover:bg-white/10 active:scale-90 shadow-xl">
+                <svg id="play-btn" class="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="pause-btn" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              </button>
+            </div>
+            
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-end mb-3">
+                <p id="track-name" class="text-[11px] font-black text-white uppercase tracking-widest truncate max-w-[120px]">Tes Speaker</p>
+                <span id="audio-timer" class="text-[9px] font-bold text-white/40 tabular-nums">0:00</span>
+              </div>
+              <div class="h-2 w-full bg-white/5 rounded-full cursor-pointer group/seek" onclick="seek(event)">
+                <div id="prog-bar" class="h-full bg-gradient-to-r from-[var(--grad-start)] to-[var(--grad-end)] w-0 relative rounded-full">
+                  <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-2xl scale-0 group-hover/seek:scale-100 transition-transform border-4 border-[var(--accent)]"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Navigation -->
+      <nav class="flex justify-around mb-12 px-2 relative">
+        <button onclick="tab('links')" id="btn-links" class="nav-btn active text-[11px] font-black uppercase tracking-[0.2em]">
+          Tautan <div class="nav-indicator"></div>
+        </button>
+        <button onclick="tab('bio')" id="btn-bio" class="nav-btn text-[11px] font-black uppercase tracking-[0.2em]">
+          Enigma <div class="nav-indicator"></div>
+        </button>
+        <button onclick="tab('gallery')" id="btn-gallery" class="nav-btn text-[11px] font-black uppercase tracking-[0.2em]">
+          Galeri <div class="nav-indicator"></div>
+        </button>
+      </nav>
+
+      <!-- Tabs Section -->
+      <section class="min-h-[350px]">
+        <!-- Tab: Links -->
+        <div id="tab-links" class="tab-panel active space-y-4">
+          <a href="https://youtu.be/7VWTdzlOMO0?si=30rb62livxQQf0sG" class="link-card p-6 flex items-center justify-between group bg-emerald-500/5 border-emerald-500/10">
+            <div class="flex items-center gap-5">
+              <div class="w-12 h-12 rounded-[22px] bg-[#25D366] flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              </div>
+              <div>
+                <p class="text-[14px] font-[800] text-white">WhatsApp</p>
+                <p class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Ayo Yapping</p>
+              </div>
+            </div>
+            <svg class="w-5 h-5 text-white/10 group-hover:text-emerald-500 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
+
+          <a href="https://www.tiktok.com/@me.dy__?_r=1&_t=ZS-93t7EmhIvbD" class="link-card p-6 flex items-center justify-between group">
+            <div class="flex items-center gap-5">
+              <div class="w-12 h-12 rounded-[22px] bg-black border border-white/20 flex items-center justify-center shadow-lg transform group-hover:-rotate-6 transition relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-pink-500/20"></div>
+                <svg class="w-6 h-6 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.44-4.13-1.24-.13-.09-.26-.18-.38-.28v5.44c0 1.03-.13 2.06-.44 3.04-.31.98-.82 1.91-1.54 2.67-.72.76-1.64 1.34-2.65 1.69-1.01.35-2.09.49-3.17.41-1.08-.08-2.14-.38-3.08-.94-.94-.56-1.72-1.37-2.27-2.31-.55-.94-.85-2.04-.84-3.14.01-1.1.31-2.2.86-3.14.55-.94 1.33-1.75 2.27-2.31.94-.56 2-.86 3.08-.94.3-.02.61-.01.91-.02v4.03c-.27.01-.54.04-.8.1-.52.12-1 .38-1.39.75-.39.37-.66.86-.78 1.39-.12.53-.08 1.09.12 1.59.2.5.54.94.98 1.25.44.31.97.48 1.51.5.54.02 1.08-.1 1.56-.35.48-.25.88-.63 1.14-1.1.26-.47.38-1.02.34-1.56V.02z"/></svg>
+              </div>
+              <div>
+                <p class="text-[14px] font-[800] text-white">TikTok</p>
+                <p class="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Fungsi?</p>
+              </div>
+            </div>
+            <svg class="w-5 h-5 text-white/10 group-hover:text-pink-500 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
+
+          <a href="#" class="link-card p-6 flex items-center justify-between group">
+            <div class="flex items-center gap-5">
+              <div class="w-12 h-12 rounded-[22px] bg-[#24A1DE] flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+  <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.464c-.149.659-.54 1.222-1.087 1.222-.191 0-.382-.047-.562-.143l-3.002-2.212-1.447 1.394c-.144.139-.333.217-.531.217-.058 0-.117-.007-.175-.022-.296-.075-.515-.346-.515-.652v-3.793l6.561-5.917c.063-.057.063-.149 0-.206-.064-.057-.152-.057-.216 0l-8.114 5.113-3.623-1.127c-.571-.18-.58-.571.12-.845l13.723-5.301c.64-.247 1.151.104.892.801z"/>
+</svg>
+              </div>
+              <div>
+                <p class="text-[14px] font-[800] text-white">Telegram</p>
+                <p class="text-[10px] text-sky-400 uppercase tracking-widest">lele-gram</p>
+              </div>
+            </div>
+            <svg class="w-5 h-5 text-white/10 group-hover:text-white/50 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <div id="tab-bio" class="tab-panel">
+          <div class="bg-black/25 p-10 rounded-[48px] border border-white/5 relative overflow-hidden group">
+            <div class="flex justify-between items-center mb-8">
+              <span class="text-[10px] font-black uppercase text-[var(--accent)] tracking-[0.3em] px-4 py-1.5 bg-[var(--accent)]/10 rounded-full">Enigma v0.1</span>
+              <span id="real-time-status" class="text-[9px] font-bold text-white/20">LIVE</span>
+            </div>
+            <div id="riddle-container" class="min-h-[120px] flex items-center"></div>
+            <button onclick="generateRiddle()" class="w-full mt-8 py-4 bg-white/5 rounded-3xl text-[11px] font-black uppercase text-white/30 hover:text-white hover:bg-white/10 transition-all tracking-[0.3em] border border-white/5 active:scale-95 shadow-lg">Teka-teki Baru</button>
+          </div>
+        </div>
+
+        <div id="tab-gallery" class="tab-panel">
+          <div class="grid grid-cols-2 gap-5">
+            <div onclick="openLB(this.querySelector('img').src)" class="aspect-[4/5] bg-white/5 rounded-[40px] overflow-hidden cursor-zoom-in group border border-white/5 relative">
+              <img src="https://i.ibb.co.com/PsG3Qx68/Proyek-Baru-4282-D47.jpg" class="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                <span class="text-[9px] text-white font-black uppercase tracking-[0.2em]">Hoeman</span>
+              </div>
+            </div>
+            <div onclick="openLB(this.querySelector('img').src)" class="aspect-[4/5] bg-white/5 rounded-[40px] overflow-hidden cursor-zoom-in group border border-white/5 relative">
+              <img src="https://i.ibb.co.com/Z6KVpBVK/Proyek-Baru-702-D392.jpg" class="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                <span class="text-[9px] text-white font-black uppercase tracking-[0.2em]">Sefatu</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="mt-16 text-center">
+        <div class="inline-flex items-center gap-4 px-6 py-2.5 bg-white/5 rounded-full border border-white/5 opacity-40 hover:opacity-100 transition cursor-default">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_#4ade80]"></span>
+          <span class="text-[8px] font-black uppercase tracking-[0.5em] text-white">Powered by ☕</span>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <audio id="audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" crossorigin="anonymous"></audio>
+
+  <script>
+    const riddles = [
+      { q: "Jika hari ini hari Rabu, 100 hari lagi jatuh pada hari apa?", a: "Jumat, karena 100 dibagi 7 sisanya 2. (Rabu + 2 hari = Jumat )" },
+      { q: "Sebuah mobil melaju 60 km/jam selama 1 jam. Lalu 60 km/jam lagi selama 1 jam berikutnya. Berapa kecepatan rata-ratanya?", a: "60 km/jam. Karena kecepatannya konsisten." },
+      { q: "Sebuah jam menunjukkan pukul 03.15. Sudut antara jarum jam dan menit berapa derajat?", a: "7,5°.Jarum menit di 90°. Jarum jam sudah bergerak 3 × 30° + 15 × 0,5° = 97,5°. Selisihnya 7,5°." },
+      { q: "Jika semua A adalah B, dan semua B adalah C, apakah semua A adalah C?", a: "Ya. Karena A ⊂ B dan B ⊂ C." },
+      { q: "Ada 8 burung di pohon. Seorang pemburu menembak satu. Berapa burung tersisa di pohon?", a: "Tidak ada. Karena yang lain terbang." },
+      { q: "Jika kemarin adalah hari esoknya Senin, hari apa sekarang?", a: "Minggu. Karena “hari esoknya Senin” adalah Selasa. Jika kemarin adalah Selasa, maka hari ini Rabu? Tunggu… logikanya terbalik. Kita cek pelan: Jika kemarin adalah hari esoknya Senin → hari esoknya Senin = Selasa. Berarti kemarin Selasa → hari ini Rabu. › Jawaban akhir: Rabu." },
+      { q: "Berapa angka yang ada antara 1 dan 10?", a: "Tak terhingga. Karena ada 1,1… 1,01… 1,001… dan seterusnya." },
+      { q: "Apa yang lebih berat: 1 kg kapas atau 1 kg besi?", a: "Sama beratnya. Keduanya 1 kg.🪮" },
+      { q: "Berapa kali kamu bisa mengurangkan 5 dari 25?", a: "Sekali. Setelah itu bukan 25 lagi, tapi 20." },
+      { q: "Kata apa dalam bahasa Indonesia yang selalu dibaca sama dari depan dan belakang?", a: "Kasur Rusak" }
+    ];
+
+    const audio = document.getElementById('audio');
+    const audioContainer = document.getElementById('audio-container');
+    const playBtn = document.getElementById('play-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const progBar = document.getElementById('prog-bar');
+    const timer = document.getElementById('audio-timer');
+    const trackName = document.getElementById('track-name');
+    const kickFill = document.getElementById('kick-fill');
+    const loadLabel = document.getElementById('load-label');
+    
+    let audioCtx, analyser, dataArray;
+    let seconds = 0;
+
+    function updateGreeting() {
+      const hour = new Date().getHours();
+      let msg = "";
+      if (hour >= 5 && hour < 12) msg = "Selamat Pagi";
+      else if (hour >= 12 && hour < 15) msg = "Selamat Siang";
+      else if (hour >= 15 && hour < 18) msg = "Selamat Sore";
+      else msg = "Selamat Malam";
+      document.getElementById('greeting').innerText = msg;
+    }
+
+    function generateRiddle() {
+  const container = document.getElementById('riddle-container');
+  const random = riddles[Math.floor(Math.random() * riddles.length)];
+  
+  // Reset container dengan struktur dasar
+  container.innerHTML = `
+    <div class="w-full">
+      <p id="typing-text" class="text-[15px] text-white/80 font-medium italic mb-8 min-h-[60px] leading-relaxed"></p>
+      <div id="riddle-actions" class="flex items-center gap-6 opacity-0 transition-opacity duration-500">
+         <button onclick="revealAnswer(this)" class="px-6 py-2.5 rounded-2xl bg-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--glow)] transition hover:brightness-110 active:scale-90">Buka Rahasia</button>
+         <p class="answer hidden text-[13px] font-bold text-white/50 tracking-wide">${random.a}</p>
+      </div>
+    </div>
+  `;
+
+  // Logika Typing Animation
+  const textElement = document.getElementById('typing-text');
+  const actions = document.getElementById('riddle-actions');
+  const fullText = `"${random.q}"`;
+  let index = 0;
+
+  function type() {
+    if (index < fullText.length) {
+      textElement.innerHTML += fullText.charAt(index);
+      index++;
+      setTimeout(type, 40); // Kecepatan mengetik (40ms per karakter)
+    } else {
+      // Munculkan tombol setelah mengetik selesai
+      actions.classList.remove('opacity-0');
+    }
+  }
+
+  type();
+}
+
+
+    function revealAnswer(btn) {
+      btn.style.display = 'none';
+      btn.nextElementSibling.classList.remove('hidden');
+    }
+
+    async function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        // Meningkatkan resolusi untuk filter frekuensi lebih tajam
+        analyser.fftSize = 1024;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        renderVisuals();
+      }
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+    }
+
+    function renderVisuals() {
+      requestAnimationFrame(renderVisuals);
+      if (!analyser || audio.paused) {
+        kickFill.style.width = '0%';
+        return;
+      }
+
+      analyser.getByteFrequencyData(dataArray);
+      
+      // Sangat spesifik pada frekuensi Kick (sub-bass)
+      // Index 1-3 pada fftSize 1024 sekitar 40Hz - 120Hz
+      let kickValue = (dataArray[1] + dataArray[2] + dataArray[3]) / 3;
+
+      // Threshold lebih tinggi untuk membuang suara selain kick
+      const threshold = 160; 
+      if(kickValue > threshold) {
+        const intensity = (kickValue - threshold) / (255 - threshold);
+        // Melebar ke kanan hingga penuh (100%)
+        kickFill.style.width = (intensity * 100) + '%';
+        kickFill.style.opacity = 0.1 + (intensity * 0.3);
+      } else {
+        // Kembali ke 0 dengan cepat
+        kickFill.style.width = '0%';
+        kickFill.style.opacity = '0.05';
+      }
+    }
+
+    function toggleAudio() {
+      initAudio().then(() => {
+        if (audio.paused) {
+          audio.play();
+          playBtn.classList.add('hidden');
+          pauseBtn.classList.remove('hidden');
+          audioContainer.classList.add('playing');
+        } else {
+          audio.pause();
+          playBtn.classList.remove('hidden');
+          pauseBtn.classList.add('hidden');
+          audioContainer.classList.remove('playing');
+        }
+      });
+    }
+
+    function loadCustomAudio(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const url = URL.createObjectURL(file);
+        audio.src = url;
+        trackName.innerText = file.name.split('.')[0];
+        audio.play();
+        playBtn.classList.add('hidden');
+        pauseBtn.classList.remove('hidden');
+        audioContainer.classList.add('playing');
+        
+        // Memudarkan tombol load setelah berhasil (opacity sangat rendah)
+        loadLabel.style.opacity = "0.05";
+        
+        initAudio();
+      }
+    }
+
+    function formatTime(s) {
+      const min = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${min}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    audio.ontimeupdate = () => {
+      const pct = (audio.currentTime / audio.duration * 100);
+      progBar.style.width = pct + '%';
+      timer.innerText = formatTime(audio.currentTime);
+    };
+
+    function seek(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      audio.currentTime = (x / rect.width) * audio.duration;
+    }
+
+    function tab(id) {
+      document.querySelectorAll('.tab-panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      const targetPanel = document.getElementById('tab-'+id);
+      const targetBtn = document.getElementById('btn-'+id);
+      targetPanel.style.display = 'block';
+      setTimeout(() => targetPanel.classList.add('active'), 10);
+      targetBtn.classList.add('active');
+    }
+
+    function setTheme(t) { document.body.setAttribute('data-theme', t); }
+
+    function openLB(src) {
+      const lb = document.getElementById('lightbox');
+      document.getElementById('lb-img').src = src;
+      lb.style.display = 'flex';
+    }
+
+    window.onload = () => {
+      updateGreeting();
+      generateRiddle();
+      setInterval(() => {
+        seconds++;
+        document.getElementById('real-time-status').innerText = seconds < 60 ? "ONLINE" : `${Math.floor(seconds/60)}m`;
+      }, 1000);
+    };
+  </script>
+</body>
+</html>
+
